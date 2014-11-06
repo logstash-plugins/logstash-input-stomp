@@ -24,7 +24,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   # The destination to read events from.
   #
-  # Example: "/topic/logstash"
+  # Example: `/topic/logstash`
   config :destination, :validate => :string, :required => true
 
   # The vhost to use
