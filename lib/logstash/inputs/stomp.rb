@@ -6,7 +6,6 @@ require 'pp'
 
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   config_name "stomp"
-  milestone 2
 
   default :codec, "plain"
 
