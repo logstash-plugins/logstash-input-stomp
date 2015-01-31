@@ -59,7 +59,9 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
-  # Add headers as event fields
+  # Add headers as event fields, as a comma separated list of header names.
+  #
+  # Example: headers => ["message-id", "type"]
   config :headers, :validate => :array, :default => []
 
   private
