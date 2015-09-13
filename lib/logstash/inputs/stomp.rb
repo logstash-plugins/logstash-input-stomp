@@ -3,9 +3,36 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require 'pp'
 
+# This plugin connects to a Stomp endpoint and consumes all messages.
+# It generates an event for each message received. The _message_ field of the event will carry the body of the Stomp
+# message. You can also specify a set of headers to be copied from the Stomp message to the event as separate fields.
 
+# ## Example
+# With this configuration:
+# input {
+#   stomp {
+#     debug => true
+#     host => "localhost"
+#     port => 5445
+#     user => "guest"
+#     password => "guest"
+#     destination => "test"
+#     headers => ["message-id", "type"]
+#   }
+# }
+#
+# output {
+#   stdout { codec => json}
+# }
+
+# The plugin will connect to _stomp://localhost:5445_, with _guest:guest_ as user:password, and connect to the _test_ destination.
+# The output of the message could be something like:
+# {"message":"hello world","@version":"1","@timestamp":"2015-01-27T17:51:48.872Z","message-id":"136","type":"messageType1"}
+#
+#
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   config_name "stomp"
+  milestone 3
 
   default :codec, "plain"
 
@@ -23,7 +50,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   # The destination to read events from.
   #
-  # Example: `/topic/logstash`
+  # Example: "/topic/logstash"
   config :destination, :validate => :string, :required => true
 
   # The vhost to use
@@ -31,6 +58,11 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
+
+  # Add headers as event fields, as a comma separated list of header names.
+  #
+  # Example: headers => ["message-id", "type"]
+  config :headers, :validate => :array, :default => []
 
   private
   def connect
@@ -60,10 +92,20 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   end # def register
 
   private
+  def add_headers event, msg
+    p msg
+    @headers.each do |header|
+      puts "Checking for header #{header}"
+      event[header] = msg[header] if(msg[header])
+    end    
+  end
+
+
   def subscription_handler
     @client.subscribe(@destination) do |msg|
       @codec.decode(msg.body) do |event|
         decorate(event)
+        add_headers(event, msg)
         @output_queue << event
       end
     end
