@@ -3,9 +3,6 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require 'pp'
 
-Thread.abort_on_exception = true
-
-
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   attr_accessor :client
 
