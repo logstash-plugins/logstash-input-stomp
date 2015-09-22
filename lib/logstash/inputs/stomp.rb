@@ -3,8 +3,12 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require 'pp'
 
+Thread.abort_on_exception = true
+
 
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
+  attr_accessor :client
+
   config_name "stomp"
 
   default :codec, "plain"
@@ -35,33 +39,39 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   private
   def connect
     begin
-      @client.connect
-      @logger.debug("Connected to stomp server") if @client.connected?
+      client.connect
+      @logger.debug("Connected to stomp server") if client.connected?
     rescue => e
       @logger.debug("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
-      sleep 2
-      retry
+      if stop?
+        sleep 2
+        retry
+      end
     end
   end
 
   public
   def register
     require "onstomp"
-    @client = OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
-    @client.host = @vhost if @vhost
+    client = new_client
+    client.host = @vhost if @vhost
     @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
 
     # Handle disconnects 
-    @client.on_connection_closed {
+    client.on_connection_closed {
       connect
       subscription_handler # is required for re-subscribing to the destination
     }
     connect
   end # def register
 
+  def new_client
+    OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
+  end
+
   private
   def subscription_handler
-    @client.subscribe(@destination) do |msg|
+    client.subscribe(@destination) do |msg|
       @codec.decode(msg.body) do |event|
         decorate(event)
         @output_queue << event
@@ -72,8 +82,10 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     #the flow control to the 'run' method below. After that, the
     #method "run_input" from agent.rb marks 'done' as 'true' and calls
     #'finish' over the Stomp plugin instance.
-    #'Sleeping' the plugin leves the instance alive.
-    sleep
+    #'Sleeping' the plugin leaves the instance alive.
+    until stop?
+      sleep 1
+    end
   end
 
   public
