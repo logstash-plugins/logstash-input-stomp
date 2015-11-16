@@ -36,10 +36,10 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   private
   def connect
     begin
-      client.connect
-      @logger.debug("Connected to stomp server") if client.connected?
-    rescue => e
-      @logger.debug("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
+      @client.connect
+      @logger.debug? && @logger.debug("Connected to stomp server") if @client.connected?
+    rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError=> e
+      @logger.warn("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
       if stop?
         sleep 2
         retry
@@ -50,12 +50,12 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   public
   def register
     require "onstomp"
-    client = new_client
-    client.host = @vhost if @vhost
+    @client = new_client
+    @client.host = @vhost if @vhost
     @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
 
-    # Handle disconnects 
-    client.on_connection_closed {
+    # Handle disconnects
+    @client.on_connection_closed {
       connect
       subscription_handler # is required for re-subscribing to the destination
     }
@@ -68,7 +68,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   private
   def subscription_handler
-    client.subscribe(@destination) do |msg|
+    @client.subscribe(@destination) do |msg|
       @codec.decode(msg.body) do |event|
         decorate(event)
         @output_queue << event
@@ -87,7 +87,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   public
   def run(output_queue)
-    @output_queue = output_queue 
+    @output_queue = output_queue
     subscription_handler
   end # def run
 end # class LogStash::Inputs::Stomp
