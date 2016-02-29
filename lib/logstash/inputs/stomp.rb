@@ -3,8 +3,9 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require 'pp'
 
-
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
+  attr_accessor :client
+
   config_name "stomp"
 
   default :codec, "plain"
@@ -37,16 +38,18 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
-  
+
   private
   def connect
     begin
       @client.connect
-      @logger.debug("Connected to stomp server") if @client.connected?
-    rescue => e
-      @logger.debug("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
-      sleep 2
-      retry
+      @logger.debug? && @logger.debug("Connected to stomp server") if @client.connected?
+    rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError=> e
+      @logger.warn("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
+      if stop?
+        sleep 2
+        retry
+      end
     end
   end
 
@@ -61,21 +64,25 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
       else
         @ssl_opts = {:verify_mode => OpenSSL::SSL::VERIFY_NONE, :post_connection_check => false}  # disable verification
       end
-      @client = OnStomp::Client.new("stomp+ssl://#{@host}:#{@port}", :login => @user, :passcode => @password.value, :ssl => @ssl_opts)
     else
       @protocol = "stomp"
-      @client = OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
+      @ssl_opts = {}  # no ssl options if not ssl
     end
+    @client = new_client
     @client.host = @vhost if @vhost
     @stomp_url = "#{@protocol}://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
 
-    # Handle disconnects 
+    # Handle disconnects
     @client.on_connection_closed {
       connect
       subscription_handler # is required for re-subscribing to the destination
     }
     connect
   end # def register
+
+  def new_client
+    OnStomp::Client.new("#{@protocol}://#{@host}:#{@port}", :login => @user, :passcode => @password.value, :ssl => @ssl_opts)
+  end
 
   private
   def subscription_handler
@@ -90,13 +97,15 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     #the flow control to the 'run' method below. After that, the
     #method "run_input" from agent.rb marks 'done' as 'true' and calls
     #'finish' over the Stomp plugin instance.
-    #'Sleeping' the plugin leves the instance alive.
-    sleep
+    #'Sleeping' the plugin leaves the instance alive.
+    until stop?
+      sleep 1
+    end
   end
 
   public
   def run(output_queue)
-    @output_queue = output_queue 
+    @output_queue = output_queue
     subscription_handler
   end # def run
 end # class LogStash::Inputs::Stomp
