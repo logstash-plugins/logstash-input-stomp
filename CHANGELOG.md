@@ -1,3 +1,5 @@
+# 2.0.4
+  - New dependency requirements for logstash-core for the 5.0 release
 ## 2.0.3
  - Bugfix https://github.com/logstash-plugins/logstash-input-stomp/issues/10
 
