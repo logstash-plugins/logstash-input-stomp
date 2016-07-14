@@ -1,3 +1,6 @@
+## 3.0.1
+  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
+
 # 3.0.0 (2016-05-20)
   - Breaking: Updated to use new Java APIs
 # 2.0.5
