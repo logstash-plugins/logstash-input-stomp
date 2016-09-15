@@ -30,6 +30,12 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # The vhost to use
   config :vhost, :validate => :string, :default => nil
 
+  # Include message headers
+  config :headers, :validate => :boolean, :default => false
+  
+  # Header delimiter
+  config :header_delimiter, :validate => :string, :default => ","
+  
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -69,9 +75,9 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   private
   def subscription_handler
     @client.subscribe(@destination) do |msg|
-      @codec.decode(msg.body) do |event|
-        decorate(event)
-        @output_queue << event
+	@codec.decode(format_message(msg)) do |event|
+	decorate(event)
+	@output_queue << event
       end
     end
     #In the event that there is only Stomp input plugin instances
@@ -90,4 +96,19 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     @output_queue = output_queue
     subscription_handler
   end # def run
+  
+  private
+  def format_message(msg)
+	return @headers ? "#{format_headers(msg)}\n#{msg.body}" : msg.body
+  end
+  
+  private
+  def format_headers(msg)
+	header_array = []
+	msg.headers.each do |key, value|
+		header_array << "#{key}=#{value}"
+	end
+
+	return header_array.join("#{@header_delimiter}")
+  end
 end # class LogStash::Inputs::Stomp
