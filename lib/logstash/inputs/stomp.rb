@@ -33,8 +33,8 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # Include message headers
   config :headers, :validate => :boolean, :default => false
   
-  # Header delimiter
-  config :header_delimiter, :validate => :string, :default => ","
+  # Header array
+  config :header_array, :validate => :array, :default => []
   
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
@@ -75,9 +75,10 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   private
   def subscription_handler
     @client.subscribe(@destination) do |msg|
-	@codec.decode(format_message(msg)) do |event|
-	decorate(event)
-	@output_queue << event
+	@codec.decode(msg.body) do |event|
+		decorate(event)
+		add_headers(event, msg) if @headers
+		@output_queue << event
       end
     end
     #In the event that there is only Stomp input plugin instances
@@ -98,17 +99,28 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   end # def run
   
   private
-  def format_message(msg)
-	return @headers ? "#{format_headers(msg)}\n#{msg.body}" : msg.body
+  def add_headers(event, msg)
+	@header_array.empty? ? add_all_headers(event, msg) : add_specific_headers(event, msg)
   end
   
   private
-  def format_headers(msg)
-	header_array = []
+  def add_all_headers(event, msg)
 	msg.headers.each do |key, value|
-		header_array << "#{key}=#{value}"
+		event[key] = value
 	end
-
-	return header_array.join("#{@header_delimiter}")
+  end
+  
+  private
+  def add_specific_headers(event, msg)
+	#Convert Stomp Frame Header to Ruby hash
+	header_hash = {}
+	msg.headers.each do |key, value|
+		header_hash[key] = value
+	end
+	
+	#Find specific headers
+	@header_array.each do |key|
+		event[key] = header_hash[key] if header_hash.key?(key)
+	end
   end
 end # class LogStash::Inputs::Stomp
