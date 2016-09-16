@@ -1,7 +1,7 @@
 # encoding: utf-8
 require "logstash/inputs/base"
 require "logstash/namespace"
-require 'pp'
+require "pp"
 
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   attr_accessor :client
@@ -47,12 +47,12 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError, Errno::ECONNREFUSED => e      
       if @reconnect
 	@logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
-	@logger.debug("#{e.backtrace.join("\n")}")
+	@logger.debug("#{e.backtrace.join("\n")}") if @debug
 	sleep @reconnect_interval
         retry
       end
       @logger.warn("Failed to connect to stomp server. Exiting with error: #{e.inspect}")
-      @logger.debug("#{e.backtrace.join("\n")}")
+      @logger.debug("#{e.backtrace.join("\n")}") if @debug
       stop?
     end
   end
@@ -60,11 +60,6 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   public
   def register
     require "onstomp"
-    require "logger"
-	
-    # Initialize Logger
-    @logger = Logger.new(STDOUT)
-    @logger.level = @debug ? Logger::DEBUG : @logger.level = Logger::INFO # Set appropriate logger level
 	
     @client = new_client
     @client.host = @vhost if @vhost
@@ -76,9 +71,6 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
       subscription_handler # is required for re-subscribing to the destination
     }
 
-    # Display configuration information
-    @logger.info("Reconnect is disabled, plugin will not reconnect on connection error") if !@reconnect
-    @logger.info("Debug is disabled, turn on debug for full exceptions") if !@debug
     connect
   end # def register
 
