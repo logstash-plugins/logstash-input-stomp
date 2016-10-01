@@ -30,6 +30,12 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # The vhost to use
   config :vhost, :validate => :string, :default => nil
 
+  # Enable TLS/SSL connection?
+  config :ssl, :validate => :boolean, :default => false
+
+  # Validate TLS/SSL certificate?
+  config :verify_ssl, :validate => :boolean, :default => false
+
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -50,9 +56,21 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   public
   def register
     require "onstomp"
+    # Set protocol based on wether ssl is true or not
+    if @ssl
+      @protocol = "stomp+ssl"
+      if @verify_ssl
+        @ssl_opts = {}  # default in onstomp is to verify certificates
+      else
+        @ssl_opts = {:verify_mode => OpenSSL::SSL::VERIFY_NONE, :post_connection_check => false}  # disable verification
+      end
+    else
+      @protocol = "stomp"
+      @ssl_opts = {}  # no ssl options if not ssl
+    end
     @client = new_client
     @client.host = @vhost if @vhost
-    @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
+    @stomp_url = "#{@protocol}://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
 
     # Handle disconnects
     @client.on_connection_closed {
@@ -63,7 +81,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   end # def register
 
   def new_client
-    OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
+    OnStomp::Client.new("#{@protocol}://#{@host}:#{@port}", :login => @user, :passcode => @password.value, :ssl => @ssl_opts)
   end
 
   private
