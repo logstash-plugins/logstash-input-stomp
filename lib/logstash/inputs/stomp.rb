@@ -52,9 +52,9 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
       @logger.info("Connected to stomp server") if @client.connected?
     rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError, Errno::ECONNREFUSED => e      
       if @reconnect
-	@logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
-	@logger.debug("#{e.backtrace.join("\n")}") if @debug
-	sleep @reconnect_interval
+        @logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
+        @logger.debug("#{e.backtrace.join("\n")}") if @debug
+        sleep @reconnect_interval
         retry
       end
       @logger.warn("Failed to connect to stomp server. Exiting with error: #{e.inspect}")
@@ -90,7 +90,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     return if !@client.connected?
 
     @client.subscribe(@destination) do |msg|
-	@codec.decode(msg.body) do |event|
+	  @codec.decode(msg.body) do |event|
 		decorate(event)
 		add_headers(event, msg) if @headers
 		@output_queue << event
@@ -114,28 +114,28 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   end # def run
   
   private
-  def add_headers(event, msg)
-	@header_array.empty? ? add_all_headers(event, msg) : add_specific_headers(event, msg)
+    def add_headers(event, msg)
+    @header_array.empty? ? add_all_headers(event, msg) : add_specific_headers(event, msg)
   end
   
   private
   def add_all_headers(event, msg)
-	msg.headers.each do |key, value|
-		event[key] = value
-	end
+    msg.headers.each do |key, value|
+      event.set(key,value)
+    end
   end
   
   private
   def add_specific_headers(event, msg)
-	#Convert Stomp Frame Header to Ruby hash
-	header_hash = {}
-	msg.headers.each do |key, value|
-		header_hash[key] = value
-	end
-	
-	#Find specific headers
-	@header_array.each do |key|
-		event[key] = header_hash[key] if header_hash.key?(key)
-	end
+    #Convert Stomp Frame Header to Ruby hash
+    header_hash = {}
+    msg.headers.each do |key, value|
+      header_hash[key] = value
+    end
+    
+    #Find specific headers
+    @header_array.each do |key|
+      event.set(key, header_hash[key]) if header_hash.key?(key)
+    end
   end
 end # class LogStash::Inputs::Stomp
