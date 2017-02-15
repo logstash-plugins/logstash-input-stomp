@@ -1,3 +1,6 @@
+# 3.0.3
+ - Docs: Add plugin description
+
 # 3.0.2
  - Added support for reconnecting when the broker is not available
 

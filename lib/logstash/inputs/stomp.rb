@@ -3,6 +3,7 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "pp"
 
+# Creates events received with the STOMP protocol.
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   attr_accessor :client
 
