@@ -1,8 +1,9 @@
 # encoding: utf-8
 require "logstash/inputs/base"
 require "logstash/namespace"
-require 'pp'
+require "pp"
 
+# Creates events received with the STOMP protocol.
 class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   attr_accessor :client
 
@@ -30,6 +31,12 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # The vhost to use
   config :vhost, :validate => :string, :default => nil
 
+  # Auto reconnect
+  config :reconnect, :validate => :boolean, :default => true
+  
+  #Auto reconnect interval in seconds
+  config :reconnect_interval, :validate => :number, :default => 30
+
   # Enable TLS/SSL connection?
   config :ssl, :validate => :boolean, :default => false
 
@@ -43,13 +50,17 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   def connect
     begin
       @client.connect
-      @logger.debug? && @logger.debug("Connected to stomp server") if @client.connected?
-    rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError=> e
-      @logger.warn("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
-      if stop?
-        sleep 2
+      @logger.info("Connected to stomp server") if @client.connected?
+    rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError, Errno::ECONNREFUSED => e      
+      if @reconnect
+	@logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
+	@logger.debug("#{e.backtrace.join("\n")}") if @debug
+	sleep @reconnect_interval
         retry
       end
+      @logger.warn("Failed to connect to stomp server. Exiting with error: #{e.inspect}")
+      @logger.debug("#{e.backtrace.join("\n")}") if @debug
+      stop?
     end
   end
 
@@ -77,6 +88,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
       connect
       subscription_handler # is required for re-subscribing to the destination
     }
+
     connect
   end # def register
 
@@ -86,6 +98,9 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   private
   def subscription_handler
+    #Exit function when connection is not active
+    return if !@client.connected?
+
     @client.subscribe(@destination) do |msg|
       @codec.decode(msg.body) do |event|
         decorate(event)

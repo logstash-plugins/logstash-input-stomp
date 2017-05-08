@@ -1,3 +1,21 @@
+# 3.0.3
+ - Docs: Add plugin description
+
+# 3.0.2
+ - Added support for reconnecting when the broker is not available
+
+## 3.0.1
+  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
+
+# 3.0.0 (2016-05-20)
+  - Breaking: Updated to use new Java APIs
+
+# 2.0.5
+  - Depend on logstash-core-plugin-api instead of logstash-core, removing the need to mass update plugins on major releases of logstash
+
+# 2.0.4
+  - New dependency requirements for logstash-core for the 5.0 release
+
 ## 2.0.3
  - Bugfix https://github.com/logstash-plugins/logstash-input-stomp/issues/10
 
