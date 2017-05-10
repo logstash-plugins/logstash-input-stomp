@@ -41,7 +41,16 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   config :ssl, :validate => :boolean, :default => false
 
   # Validate TLS/SSL certificate?
-  config :verify_ssl, :validate => :boolean, :default => true
+  config :ssl_certificate_validation, :validate => :boolean, :default => true
+
+  # If you need to use a custom X.509 CA (.pem certs) specify the path to that here
+  config :cacert, :validate => :path
+
+  # If you'd like to use a client certificate (note, most people don't want this) set the path to the x509 cert here
+  config :client_cert, :validate => :path
+
+  # If you're using a client certificate specify the path to the encryption key here
+   config :client_key, :validate => :path
 
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
@@ -70,10 +79,14 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     # Set protocol based on wether ssl is true or not
     if @ssl
       @protocol = "stomp+ssl"
-      if @verify_ssl
-        @ssl_opts = {}  # default in onstomp is to verify certificates
-      else
-        @ssl_opts = {:verify_mode => OpenSSL::SSL::VERIFY_NONE, :post_connection_check => false}  # disable verification
+      @ssl_opts = {}
+      @ssl_opts[:ca_file] = @cacert if @cacert
+      @ssl_opts[:cert] = @client_cert if @client_cert
+      @ssl_opts[:key] = @client_key if @client_key
+      # disable verification if false
+      if !@ssl_certificate_validation
+        @ssl_opts[:verify_mode] = OpenSSL::SSL::VERIFY_NONE
+        @ssl_opts[:post_connection_check] = false
       end
     else
       @protocol = "stomp"

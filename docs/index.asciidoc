@@ -30,12 +30,17 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
+| <<plugins-{type}s-{plugin}-cacert>> |a valid filesystem path|No
+| <<plugins-{type}s-{plugin}-client_cert>> |a valid filesystem path|No
+| <<plugins-{type}s-{plugin}-client_key>> |a valid filesystem path|No
 | <<plugins-{type}s-{plugin}-destination>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-host>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-password>> |<<password,password>>|No
 | <<plugins-{type}s-{plugin}-port>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-reconnect>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-reconnect_interval>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-ssl>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-ssl_certificate_validation>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-user>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-vhost>> |<<string,string>>|No
 |=======================================================================
@@ -44,6 +49,30 @@ Also see <<plugins-{type}s-common-options>> for a list of options supported by a
 input plugins.
 
 &nbsp;
+
+[id="plugins-{type}s-{plugin}-cacert"]
+===== `cacert` 
+
+  * Value type is <<path,path>>
+  * There is no default value for this setting.
+
+If you need to use a custom X.509 CA (.pem certs) specify the path to that here
+
+[id="plugins-{type}s-{plugin}-client_cert"]
+===== `client_cert` 
+
+  * Value type is <<path,path>>
+  * There is no default value for this setting.
+
+If the STOMP server requires a client certificate, set the path to the x509 cert here
+
+[id="plugins-{type}s-{plugin}-client_key"]
+===== `client_key` 
+
+  * Value type is <<path,path>>
+  * There is no default value for this setting.
+
+If you're using a client certificate specify the path to the encryption key here
 
 [id="plugins-{type}s-{plugin}-destination"]
 ===== `destination` 
@@ -95,6 +124,24 @@ Auto reconnect
   * Value type is <<number,number>>
   * Default value is `30`
 
+
+[id="plugins-{type}s-{plugin}-ssl"]
+===== `ssl` 
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `false`
+
+Set this to true if using TLS/SSL on STOMP server connection
+Note: setting this to false is generally considered insecure!
+
+[id="plugins-{type}s-{plugin}-ssl_certificate_validation"]
+===== `ssl_certificate_validation` 
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `true`
+
+Set this to false to disable SSL/TLS certificate validation.  This can be set to false if using a self signed certificate
+Note: setting this to false is generally considered insecure!
 
 
 [id="plugins-{type}s-{plugin}-user"]
