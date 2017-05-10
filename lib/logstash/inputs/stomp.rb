@@ -41,7 +41,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   config :ssl, :validate => :boolean, :default => false
 
   # Validate TLS/SSL certificate?
-  config :verify_ssl, :validate => :boolean, :default => false
+  config :verify_ssl, :validate => :boolean, :default => true
 
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
