@@ -46,15 +46,15 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
       @client.connect
       @logger.info("Connected to stomp server") if @client.connected?
     rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError, Errno::ECONNREFUSED => e      
-      if @reconnect
-	@logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
-	@logger.debug("#{e.backtrace.join("\n")}") if @debug
-	sleep @reconnect_interval
+      if @reconnect && !stop?
+        @logger.warn("Failed to connect to stomp server. Retry in #{@reconnect_interval} seconds. #{e.inspect}")
+        @logger.debug("#{e.backtrace.join("\n")}") if @debug
+        sleep @reconnect_interval
         retry
       end
+
       @logger.warn("Failed to connect to stomp server. Exiting with error: #{e.inspect}")
       @logger.debug("#{e.backtrace.join("\n")}") if @debug
-      stop?
     end
   end
 
@@ -65,14 +65,6 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     @client = new_client
     @client.host = @vhost if @vhost
     @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
-
-    # Handle disconnects
-    @client.on_connection_closed {
-      connect
-      subscription_handler # is required for re-subscribing to the destination
-    }
-
-    connect
   end # def register
 
   def new_client
@@ -103,7 +95,18 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   public
   def run(output_queue)
+    # Handle disconnects
+    @client.on_connection_closed {
+      self.connect
+      subscription_handler # is required for re-subscribing to the destination
+    }
+
+    connect
     @output_queue = output_queue
     subscription_handler
   end # def run
+
+  def stop
+    @client.disconnect if @client && @client.connected?
+  end
 end # class LogStash::Inputs::Stomp
