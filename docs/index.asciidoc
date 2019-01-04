@@ -1,5 +1,6 @@
 :plugin: stomp
 :type: input
+:default_codec: plain
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
@@ -7,14 +8,14 @@ START - GENERATED VARIABLES, DO NOT EDIT!
 :version: %VERSION%
 :release_date: %RELEASE_DATE%
 :changelog_url: %CHANGELOG_URL%
-:include_path: ../../../logstash/docs/include
+:include_path: ../../../../logstash/docs/include
 ///////////////////////////////////////////
 END - GENERATED VARIABLES, DO NOT EDIT!
 ///////////////////////////////////////////
 
-[id="plugins-{type}-{plugin}"]
+[id="plugins-{type}s-{plugin}"]
 
-=== Stomp
+=== Stomp input plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
@@ -25,7 +26,7 @@ Creates events received with the STOMP protocol.
 [id="plugins-{type}s-{plugin}-options"]
 ==== Stomp Input Configuration Options
 
-This plugin supports the following configuration options plus the <<plugins-{type}s-common-options>> described later.
+This plugin supports the following configuration options plus the <<plugins-{type}s-{plugin}-common-options>> described later.
 
 [cols="<,<,<",options="header",]
 |=======================================================================
@@ -45,7 +46,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-vhost>> |<<string,string>>|No
 |=======================================================================
 
-Also see <<plugins-{type}s-common-options>> for a list of options supported by all
+Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
 input plugins.
 
 &nbsp;
@@ -162,4 +163,7 @@ The vhost to use
 
 
 
+[id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
+
+:default_codec!:

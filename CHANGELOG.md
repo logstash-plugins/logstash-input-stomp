@@ -1,3 +1,16 @@
+## 3.0.8
+  - Docs: Set the default_codec doc attribute.
+
+## 3.0.7
+  - Update gemspec summary
+
+## 3.0.6
+  - Wait till pipeline is in run state to connect. Before this patch this plugin
+    could block logstash indefinitely due to a connect method that never finishes.
+
+## 3.0.5
+  - Fix some documentation issues
+
 # 3.0.3
  - Docs: Add plugin description
 
