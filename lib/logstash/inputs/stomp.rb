@@ -97,7 +97,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   def run(output_queue)
     # Handle disconnects
     @client.on_connection_closed {
-      self.connect
+      connect
       subscription_handler # is required for re-subscribing to the destination
     }
 
