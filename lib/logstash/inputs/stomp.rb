@@ -40,10 +40,16 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
+  # Custom headers to send on connect
+  config :connect_headers, :validate => :hash, :default => {}
+
+  # Custom headers to send on subscribe
+  config :subscribe_headers, :validate => :hash, :default => {}
+
   private
   def connect
     begin
-      @client.connect
+      @client.connect(headers=@connect_headers)
       @logger.info("Connected to stomp server") if @client.connected?
     rescue OnStomp::ConnectFailedError, OnStomp::UnsupportedProtocolVersionError, Errno::ECONNREFUSED => e      
       if @reconnect && !stop?
@@ -76,7 +82,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     #Exit function when connection is not active
     return if !@client.connected?
 
-    @client.subscribe(@destination) do |msg|
+    @client.subscribe(@destination, headers=@subscribe_headers) do |msg|
       @codec.decode(msg.body) do |event|
         decorate(event)
         @output_queue << event
