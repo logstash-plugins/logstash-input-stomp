@@ -1,3 +1,6 @@
+## 3.1.0
+  - Added connect_headers and subscribe_headers
+
 ## 3.0.8
   - Docs: Set the default_codec doc attribute.
 

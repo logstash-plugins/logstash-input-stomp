@@ -39,6 +39,8 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-reconnect_interval>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-user>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-vhost>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-connect_headers>> |<<hash,hash>>|No
+| <<plugins-{type}s-{plugin}-subscribe_headers>> |<<hash,hash>>|No
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
@@ -113,6 +115,26 @@ The username to authenticate with.
   * Default value is `nil`
 
 The vhost to use
+
+[id="plugins-{type}s-{plugin}-connect_headers"]
+===== `connect_headers` 
+
+  * Value type is <<hash,hash>>
+  * Default value is `{}`
+
+The headers to use on connect
+
+Example: `{ "client-id" => "my-client-id" }`
+
+[id="plugins-{type}s-{plugin}-subscribe_headers"]
+===== `subscribe_headers` 
+
+  * Value type is <<hash,hash>>
+  * Default value is `{}`
+
+The headers to use on subscribe
+
+Example: `{ "activemq.subscriptionName" => "my-subscription-name" }`
 
 
 
