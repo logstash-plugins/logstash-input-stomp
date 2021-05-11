@@ -37,6 +37,21 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   #Auto reconnect interval in seconds
   config :reconnect_interval, :validate => :number, :default => 30
 
+  # Enable TLS/SSL connection?
+  config :ssl, :validate => :boolean, :default => false
+
+  # Validate TLS/SSL certificate?
+  config :ssl_certificate_validation, :validate => :boolean, :default => true
+
+  # If you need to use a custom X.509 CA (.pem certs) specify the path to that here
+  config :cacert, :validate => :path
+
+  # If you'd like to use a client certificate (note, most people don't want this) set the path to the x509 cert here
+  config :client_cert, :validate => :path
+
+  # If you're using a client certificate specify the path to the encryption key here
+   config :client_key, :validate => :path
+
   # Enable debugging output?
   config :debug, :validate => :boolean, :default => false
 
@@ -61,14 +76,29 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   public
   def register
     require "onstomp"
-	
+    # Set protocol based on wether ssl is true or not
+    if @ssl
+      @protocol = "stomp+ssl"
+      @ssl_opts = {}
+      @ssl_opts[:ca_file] = @cacert if @cacert
+      @ssl_opts[:cert] = @client_cert if @client_cert
+      @ssl_opts[:key] = @client_key if @client_key
+      # disable verification if false
+      if !@ssl_certificate_validation
+        @ssl_opts[:verify_mode] = OpenSSL::SSL::VERIFY_NONE
+        @ssl_opts[:post_connection_check] = false
+      end
+    else
+      @protocol = "stomp"
+      @ssl_opts = {}  # no ssl options if not ssl
+    end
     @client = new_client
     @client.host = @vhost if @vhost
-    @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
+    @stomp_url = "#{@protocol}://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
   end # def register
 
   def new_client
-    OnStomp::Client.new("stomp://#{@host}:#{@port}", :login => @user, :passcode => @password.value)
+    OnStomp::Client.new("#{@protocol}://#{@host}:#{@port}", :login => @user, :passcode => @password.value, :ssl => @ssl_opts)
   end
 
   private
